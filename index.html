@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Meal Sign-Up</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; color: #222; }
+  .container { max-width: 720px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #ddd; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+  .notice { background: #fff8e6; border: 1px solid #f5c842; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #7a5c00; margin-bottom: 18px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab { padding: 6px 18px; border-radius: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; font-size: 13px; color: #555; }
+  .tab.active { background: #222; color: #fff; border-color: #222; font-weight: 500; }
+  .field { margin-bottom: 14px; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  input[type="text"], input[type="date"] { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; color: #222; background: #fff; }
+  .meal-btns { display: flex; gap: 8px; }
+  .meal-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid #ccc; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: #555; }
+  .meal-btn.active { border: 2px solid #f5a96a; background: #fff7f0; color: #222; }
+  .submit-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; background: #222; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 6px; }
+  .submit-btn:disabled { background: #bbb; cursor: not-allowed; }
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 14px; }
+  .msg.success { background: #edfaf3; color: #1a7a45; border: 1px solid #a3e6c3; }
+  .msg.error { background: #fef0f0; color: #b91c1c; border: 1px solid #fca5a5; }
+  .date-row { margin-bottom: 16px; }
+  .date-row input { width: auto; }
+  .closed-badge { display: inline-block; margin-left: 10px; font-size: 12px; color: #b91c1c; font-weight: 500; vertical-align: middle; }
+  .list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .list-card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; }
+  .list-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+  .list-title { font-size: 14px; font-weight: 600; }
+  .count-badge { font-size: 12px; background: #f3f3f3; padding: 2px 8px; border-radius: 6px; color: #555; }
+  .alpha-label { font-size: 11px; font-weight: 600; color: #aaa; margin: 8px 0 2px; }
+  .entry-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f5f5f5; }
+  .entry-name { font-size: 13px; }
+  .entry-special { font-size: 11px; color: #888; margin-left: 6px; }
+  .remove-btn { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid #fca5a5; color: #b91c1c; background: transparent; cursor: pointer; white-space: nowrap; }
+  .empty { font-size: 13px; color: #aaa; padding: 6px 0; }
+  .footer { font-size: 11px; color: #aaa; text-align: center; margin-top: 20px; }
+  @media (max-width: 500px) { .list-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Staff meal sign-up</h1>
+  <p class="subtitle">Sign up for 1 meal per day (lunch or dinner) &middot; Print first name in alphabetical order &middot; Indicate any special needs next to your name</p>
+  <div class="notice">Sign-up closes at <strong>1:00pm the day before</strong> each meal date.</div>
+
+  <div id="msg-box" style="display:none"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('signup')">Sign up</button>
+    <button class="tab" onclick="switchTab('list')">View list</button>
+  </div>
+
+  <div class="date-row field">
+    <label>Select date to sign up for</label>
+    <input type="date" id="date-input" onchange="onDateChange()" />
+    <span id="closed-badge" class="closed-badge" style="display:none">&#x26D4; Sign-up closed</span>
+  </div>
+
+  <div id="signup-view">
+    <div class="field">
+      <label>First name</label>
+      <input type="text" id="name-input" placeholder="e.g. Sarah" />
+    </div>
+    <div class="field">
+      <label>Meal</label>
+      <div class="meal-btns">
+        <button class="meal-btn active" id="btn-lunch" onclick="selectMeal('lunch')">🍽 Lunch</button>
+        <button class="meal-btn" id="btn-dinner" onclick="selectMeal('dinner')">🌙 Dinner</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Special dietary needs <span style="font-weight:400;color:#aaa">(optional)</span></label>
+      <input type="text" id="special-input" placeholder="e.g. vegetarian, gluten-free" />
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="handleSignup()">Add my name</button>
+  </div>
+
+  <div id="list-view" style="display:none">
+    <div class="list-grid">
+      <div class="list-card">
+        <div class="list-header">
+          <span class="list-title">Lunch</span>
+          <span class="count-badge" id="lunch-count">0 staff</span>
+        </div>
+        <div id="lunch-list"></div>
+      </div>
+      <div class="list-card">
+        <div class="list-header">
+          <span class="list-title">Dinner</span>
+          <span class="count-badge" id="dinner-count">0 staff</span>
+        </div>
+        <div id="dinner-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">1 meal per day per person &middot; Sign-up closes 1:00pm the day before</p>
+</div>
+
+<script>
+  var signups = {};
+  var selectedMeal = 'lunch';
+  var currentView = 'signup';
+
+  function getTomorrow() {
+    var d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  function isClosed(dateStr) {
+    if (!dateStr) return true;
+    var p = dateStr.split('-');
+    var cutoff = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]) - 1, 13, 0, 0, 0);
+    return new Date() >= cutoff;
+  }
+
+  function formatDate(dateStr) {
+    var p = dateStr.split('-');
+    var d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+    return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem('meal_signups_v2');
+      if (raw) signups = JSON.parse(raw);
+    } catch(e) { signups = {}; }
+  }
+
+  function saveData() {
+    try { localStorage.setItem('meal_signups_v2', JSON.stringify(signups)); } catch(e) {}
+  }
+
+  function initDate() {
+    var inp = document.getElementById('date-input');
+    var tomorrow = getTomorrow();
+    inp.min = tomorrow;
+    inp.value = tomorrow;
+    onDateChange();
+  }
+
+  function onDateChange() {
+    var dateStr = document.getElementById('date-input').value;
+    var closed = isClosed(dateStr);
+    document.getElementById('closed-badge').style.display = closed ? 'inline' : 'none';
+    document.getElementById('submit-btn').disabled = closed;
+    document.getElementById('submit-btn').textContent = closed ? 'Sign-up is closed for this date' : 'Add my name';
+    if (currentView === 'list') renderList();
+  }
+
+  function switchTab(tab) {
+    currentView = tab;
+    document.getElementById('signup-view').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('list-view').style.display = tab === 'list' ? 'block' : 'none';
+    var tabs = document.querySelectorAll('.tab');
+    tabs[0].classList.toggle('active', tab === 'signup');
+    tabs[1].classList.toggle('active', tab === 'list');
+    if (tab === 'list') renderList();
+  }
+
+  function selectMeal(meal) {
+    selectedMeal = meal;
+    document.getElementById('btn-lunch').classList.toggle('active', meal === 'lunch');
+    document.getElementById('btn-dinner').classList.toggle('active', meal === 'dinner');
+  }
+
+  function showMsg(text, type) {
+    var box = document.getElementById('msg-box');
+    box.className = 'msg ' + type;
+    box.textContent = text;
+    box.style.display = 'block';
+    setTimeout(function() { box.style.display = 'none'; }, 3500);
+  }
+
+  function handleSignup() {
+    var name = document.getElementById('name-input').value.trim();
+    var special = document.getElementById('special-input').value.trim();
+    var date = document.getElementById('date-input').value;
+    if (!name) return showMsg('Please enter your first name.', 'error');
+    if (isClosed(date)) return showMsg('Sign-up is closed for this date (cutoff was 1pm the day before).', 'error');
+    if (!signups[date]) signups[date] = { lunch: [], dinner: [] };
+    var all = signups[date].lunch.concat(signups[date].dinner);
+    var dup = all.find(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
+    if (dup) return showMsg(name + ' is already signed up for ' + dup.meal + ' on ' + formatDate(date) + '.', 'error');
+    signups[date][selectedMeal].push({ name: name, special: special, meal: selectedMeal });
+    signups[date][selectedMeal].sort(function(a, b) { return a.name.localeCompare(b.name); });
+    saveData();
+    document.getElementById('name-input').value = '';
+    document.getElementById('special-input').value = '';
+    showMsg(name + ' added to ' + selectedMeal + ' on ' + formatDate(date) + '!', 'success');
+  }
+
+  function renderList() {
+    var date = document.getElementById('date-input').value;
+    var data = signups[date] || { lunch: [], dinner: [] };
+    var closed = isClosed(date);
+    ['lunch', 'dinner'].forEach(function(meal) {
+      var entries = data[meal] || [];
+      document.getElementById(meal + '-count').textContent = entries.length + ' staff';
+      var container = document.getElementById(meal + '-list');
+      if (!entries.length) { container.innerHTML = '<p class="empty">No sign-ups yet</p>'; return; }
+      var groups = {};
+      entries.forEach(function(e) {
+        var k = e.name[0].toUpperCase();
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(e);
+      });
+      var html = '';
+      Object.keys(groups).sort().forEach(function(letter) {
+        html += '<div class="alpha-label">' + letter + "'s</div>";
+        groups[letter].forEach(function(e) {
+          var safeName = e.name.replace(/'/g, "\\'");
+          html += '<div class="entry-row">';
+          html += '<span class="entry-name">' + e.name;
+          if (e.special) html += '<span class="entry-special">&middot; ' + e.special + '</span>';
+          html += '</span>';
+          if (!closed) html += '<button class="remove-btn" onclick="removeEntry(\'' + date + '\',\'' + meal + '\',\'' + safeName + '\')">Remove</button>';
+          html += '</div>';
+        });
+      });
+      container.innerHTML = html;
+    });
+  }
+
+  function removeEntry(date, meal, name) {
+    if (isClosed(date)) return showMsg('Cannot remove after the 1pm cutoff.', 'error');
+    if (!signups[date] || !signups[date][meal]) return;
+    signups[date][meal] = signups[date][meal].filter(function(e) { return e.name !== name; });
+    saveData();
+    renderList();
+    showMsg(name + ' removed.', 'success');
+  }
+
+  loadData();
+  initDate();
+</script>
+</body>
+</html>
